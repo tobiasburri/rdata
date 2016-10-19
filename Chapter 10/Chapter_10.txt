@@ -1,0 +1,63 @@
+
+
+Notes:
+1) For readability purposes, the command prompts are provided 
+in order to distinguish what commands are executed at which prompts.
+
+2) To reproduce the examples in the book, you will need access to a Hadoop environment (not provided)
+and create the necessary datasets in HDFS. 
+
+
+
+10.2.1 Pig
+
+$ pig
+grunt> records = LOAD '/user/customer.txt' AS (cust_id:INT, first_name:CHARARRAY, last_name:CHARARRAY, email_address:CHARARRAY);
+grunt> filtered_records = FILTER records BY email_address matches '.*@isp.com';
+grunt> STORE filtered_records INTO '/user/isp_customers';
+grunt> quit
+$
+
+10.2.2 Hive
+
+$ hive
+hive> create table customer (cust_id bigint, first_name string, last_name string, email_address string) row format delimited fields terminated by '\t';
+hive> select count(*) from customer;
+hive> load data inpath '/user/customer.txt' into table customer;
+hive> select * from customer limit 3;
+hive> select o.order_number, o.order_date, c.* from orders o inner join customer c on o.cust_id = c.cust_id where c.email_address = 'mary.jones@isp.com';
+hive> quit;
+
+10.2.3 HBase
+
+$ hbase shell
+hbase> create 'my_table', 'cf1', 'cf2', {SPLITS =>['250000','500000','750000']}
+
+Note: in another terminal window, run
+$ hadoop fs -ls -R /hbase
+
+hbase> put 'my_table', '000700', 'cf1:cq1', 'data1'
+hbase> put 'my_table', '000700', 'cf1:cq2', 'data2'
+hbase> put 'my_table', '000700', 'cf2:cq3', 'data3'
+hbase> get 'my_table', '000700', 'cf2:cq3'
+hbase> put 'my_table', '000700', 'cf2:cq3', 'data4'
+hbase> get 'my_table', '000700', 'cf2:cq3'
+hbase> get 'my_table', '000700', {COLUMN => 'cf2:cq3', VERSIONS => 2}
+hbase> scan 'my_table', {STARTROW => '000600', STOPROW =>'000800'}
+hbase> delete 'my_table', '000700', 'cf2:cq3', 1393866138714
+hbase> get 'my_table', '000700', {COLUMN => 'cf2:cq3', VERSIONS => 2}
+hbase> scan 'my_table', {RAW => true, VERSIONS => 2, STARTROW => '000700'}
+
+Uses Cases for HBase
+
+hbase> get 'web_table', 'com.cnn.www', {VERSIONS => 2}
+
+
+
+
+
+
+
+
+
+

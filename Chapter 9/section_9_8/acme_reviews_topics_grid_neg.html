@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>ACME Reviews Visualization</title>
+		<style>
+
+		.axis .tick {
+			fill: #000;
+		}
+
+		.axis path {
+			  stroke-width: 0;
+		}
+
+		.axis line {
+			fill: none;
+			stroke: #ccc;
+			opacity: 0.5;
+			shape-rendering: crispEdges;
+		}
+
+		/*.axis path,
+		.axis line {
+			fill: none;
+			stroke: #ccc;
+			shape-rendering: crispEdges;
+		}*/
+		 
+		.axis text {
+			font-family: sans-serif;
+			font-size: 11px;
+		}
+		 
+		.loading {
+			font-family: sans-serif;
+			font-size: 15px;
+		}
+		 
+		.circle {
+			fill: #888;
+			opacity: 0.6;
+			stroke:#222;
+			stroke-width: 1.5px;
+		}
+
+		.circlefocus {
+			fill: #FA5858;
+			stroke:#8A0808;
+			opacity: 0.8;
+			stroke-width: 1.5px;
+		}
+
+		.textfocus {
+			fill: #8A0808;
+		}
+
+		#tickfocus {
+			stroke: #8A0808;
+			opacity: 0.5;
+		}
+
+		</style>
+    </head>
+
+    <body>
+        <div id="punchcard"></div>
+        <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+        <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script type="text/javascript">
+
+        	// Given a list of sublists, get the unique strings from the pos-th element of the sublist
+			function unique(list, pos) {
+			  var result = [];
+			  $.each(list, function(i, e) {
+			    if ($.inArray(e[pos], result) == -1) result.push(e[pos]);
+			  });
+			  return result;
+			}
+        
+			var w = 400,
+			    h = 700,
+			    pad = 20,
+			    left_pad = 100,
+			    Data_url = 'acme_reviews_topics_grid_1star_5topics.json';
+			
+			var svg = d3.select("#punchcard")
+			        .append("svg")
+			        .attr("width", w)
+			        .attr("height", h);
+			
+			var x, y;
+			
+			var xAxis, yAxis;
+			
+			d3.json(Data_url, function (punchcard_data) {
+				xlabel = unique(punchcard_data, 0);
+				ylabel = unique(punchcard_data, 1);
+				console.log(xlabel);
+				console.log(ylabel);
+				x = d3.scale.linear().domain([1, xlabel.length]).range([left_pad, w-pad]);
+				y = d3.scale.ordinal().domain(ylabel.sort().reverse()).rangePoints([pad, h-pad*2]);
+				console.log("x=" + x);
+				xAxis = d3.svg.axis()
+				.scale(x)
+				.ticks(5)
+				.tickSize(-h, 0, 0)		// grid
+				.tickFormat(function(d, i){
+					// make sure d is an integer
+					if (d % 1 === 0)
+						return "Topic " + d //Topic 1 Topic 2, etc
+				})
+				.orient('bottom');
+				
+				yAxis = d3.svg.axis()
+				.scale(y)
+				.orient('left')
+				.tickSize(-w, 0, 0);
+				
+				svg.append("g")
+				    .attr("class", "axis")
+				    .attr("transform", "translate(0, "+(h-pad)+")")
+				    .call(xAxis);
+
+				svg.append("g")
+				    .attr("class", "axis")
+				    .attr("transform", "translate("+(left_pad-pad)+", 0)")
+				    .call(yAxis);
+				
+				svg.append("text")
+				    .attr("class", "loading")
+				    .text("Loading ...")
+				    .attr("x", function () { return w/2; })
+				    .attr("y", function () { return h/2-5; });
+				
+			    var max_r = d3.max(punchcard_data.map(
+	                       function (d) { return d[2]; })),
+			        r = d3.scale.linear()
+			            .domain([0, d3.max(punchcard_data, function (d) { return d[2]; })])
+			            .range([0, 12]);
+		
+			    svg.selectAll(".loading").remove();
+		
+			    svg.selectAll("circle")
+			        .data(punchcard_data)
+			        .enter()
+			        .append("circle")
+			        .attr("class", "circle")
+			        .attr("cx", function (d) { return x(d[0]); })
+			        .attr("cy", function (d) { return y(d[1]); })
+			        .transition()
+			        .duration(800)
+			        .attr("r", function (d) { return r(d[2]); });
+			    
+			    function getXYFromTranslate(element){
+			        var split = element.getAttribute("transform").split("(");
+			        var x = ~~split[1].split(",")[0];
+			        var y = ~~split[1].split(",")[1].split(")")[0];
+			        //console.log(x + "," + y);
+			        return [x, y];
+			    } 
+			    
+			    svg.selectAll(".tick")
+			    	.on("mouseover", function() {
+			    		var thisTick = this;
+			    		d3.select(this).select("text").attr("class", "textfocus");
+			    		d3.select(this).select("line").attr("id", "tickfocus");
+			    		var focusCircles = svg.selectAll("circle").filter( 
+			    								function(d) { 
+			    									if (Math.floor(this.getAttribute("cx"))==getXYFromTranslate(thisTick)[0]) {
+			    										return d;
+			    								} });
+			    		d3.select(focusCircles)[0][0].each(
+			    								function(){
+			    									thisCircle = this;
+			    									svg.selectAll(".tick").filter(
+			    												function(d) {
+			    													if (Math.floor(thisCircle.getAttribute("cy"))==getXYFromTranslate(this)[1]) {
+			    														return d;
+			    													}		    													
+			    												}
+			    											).select("text").attr("class", "textfocus");
+			    								});
+			    		focusCircles.attr("class", "circlefocus");
+			    		
+					  d3.select(this)
+					    .attr('fill', '') // Un-sets the "explicit" fill (might need to be null instead of '')
+					    .classed("active", true ) // should then accept fill from CSS
+					})
+					.on("mouseout", function() {
+						svg.selectAll(".tick").select("text").attr("class", "");
+						svg.selectAll(".tick").select("line").attr("id", "");
+						svg.selectAll("circle").attr("class", "circle");
+					})
+				
+			});
+
+
+        </script>
+        
+    </body>
+ </html>
