@@ -9,7 +9,7 @@
 
 # Example in R
 
-income_input = as.data.frame(  read.csv("d:/bigdata/Chapter6/income.csv")   )
+income_input = as.data.frame(  read.csv("income.csv")   )
 income_input[1:10,]
 
 summary(income_input)
@@ -29,16 +29,16 @@ summary(results2)
 ###############################################################
 # this code from the text is for illustrative purposes only
 # the income_input variable does not contain the U.S. states
-results3 <- lm(Income~Age + Education,
-               + Alabama,
-               + Alaska,
-               + Arizona,
-               .
-               .
-               .
-               + WestVirginia,
-               + Wisconsin,
-               income_input)
+#results3 <- lm(Income~Age + Education,
+#               + Alabama,
+#               + Alaska,
+#               + Arizona,
+#               .
+#               .
+#               .
+#               + WestVirginia,
+#               + Wisconsin,
+#               income_input)
 ###############################################################
 
 # compute confidence intevals for the model parameters

@@ -7,7 +7,7 @@
 # Section 6.2.3 Diagnostics
 ###############################################################
 
-churn_input = as.data.frame(  read.csv("d:/bigdata/Chapter6/churn.csv")   )
+churn_input = as.data.frame(  read.csv("churn.csv")   )
 head(churn_input)
 
 sum(churn_input$Churned)
